@@ -1,0 +1,3 @@
+Tests: import
+Depends: python3-all-dbg, @
+Restrictions: superficial

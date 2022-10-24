@@ -1,0 +1,49 @@
+pyqt5-sip (12.9.0-3) unstable; urgency=medium
+
+  * Stop building extensions for Python debug interpreter (closes: #994338).
+    - Rely on automatic dbgsym packages for debug symbols.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Wed, 06 Oct 2021 12:51:22 +0300
+
+pyqt5-sip (12.9.0-2) unstable; urgency=medium
+
+  * Bump Standards-Version to 4.6.0, no changes needed.
+  * Upload to unstable.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Sun, 05 Sep 2021 21:21:39 +0300
+
+pyqt5-sip (12.9.0-1) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/control: Update Maintainer field with new Debian Python Team
+    contact address.
+  * d/control: Update Vcs-* fields with new Debian Python Team Salsa
+    layout.
+
+  [ Dmitry Shachnev ]
+  * New upstream release.
+  * Bump years in debian/copyright.
+  * Bump Standards-Version to 4.5.1, no changes needed.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Fri, 14 May 2021 20:09:54 +0300
+
+pyqt5-sip (12.8.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Sat, 29 Aug 2020 21:20:23 +0300
+
+pyqt5-sip (12.8.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Drop reproducible_extensions.diff, applied upstream.
+  * Update to debhelper compat level 13.
+  * Upload to unstable.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Wed, 03 Jun 2020 20:49:32 +0300
+
+pyqt5-sip (12.7.2-1) experimental; urgency=medium
+
+  * Initial release (closes: #956113).
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Tue, 07 Apr 2020 19:11:33 +0300
