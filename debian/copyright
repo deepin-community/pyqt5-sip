@@ -3,11 +3,11 @@ Upstream-Contact: pyqt@riverbankcomputing.com
 Upstream-Name: PyQt5-sip
 
 Files: *
-Copyright: 2015-2021 Riverbank Computing Limited <info@riverbankcomputing.com>
+Copyright: 2015-2023 Riverbank Computing Limited <info@riverbankcomputing.com>
 License: SIP or GPL-2 or GPL-3
 
 Files: debian/*
-Copyright: 2020-2021 Dmitry Shachnev <mitya57@debian.org>
+Copyright: 2020-2023 Dmitry Shachnev <mitya57@debian.org>
 License: GPL-2 or GPL-3
 
 License: SIP

@@ -1,3 +1,59 @@
+pyqt5-sip (12.13.0-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Wed, 25 Oct 2023 23:44:14 +0300
+
+pyqt5-sip (12.12.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Tue, 25 Jul 2023 13:41:58 +0300
+
+pyqt5-sip (12.11.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bump Standards-Version to 4.6.2, no changes needed.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Sat, 28 Jan 2023 22:26:23 +0400
+
+pyqt5-sip (12.11.0-2) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Avoid pypi.org in Homepage field.
+  * Drop transition for old debug package migration.
+
+ -- Jelmer Vernooĳ <jelmer@debian.org>  Fri, 28 Oct 2022 18:46:56 +0100
+
+pyqt5-sip (12.11.0-1) unstable; urgency=medium
+
+  [ Nicholas D Steeves ]
+  * gbp.conf: Add missing configuration for pristine-tar.
+
+  [ Dmitry Shachnev ]
+  * New upstream release.
+  * Bump Standards-Version to 4.6.1, no changes needed.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Mon, 20 Jun 2022 20:01:36 +0300
+
+pyqt5-sip (12.10.1-1) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster:
+    + Build-Depends: Drop versioned constraint on python3-setuptools.
+
+  [ Dmitry Shachnev ]
+  * New upstream release.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Sat, 16 Apr 2022 17:40:06 +0300
+
+pyqt5-sip (12.9.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bump years in debian/copyright.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Fri, 04 Feb 2022 18:44:22 +0300
+
 pyqt5-sip (12.9.0-3) unstable; urgency=medium
 
   * Stop building extensions for Python debug interpreter (closes: #994338).

@@ -1,8 +1,9 @@
+LICENSE
+LICENSE-GPL2
+LICENSE-GPL3
 MANIFEST.in
 README
 apiversions.c
-array.c
-array.h
 bool.cpp
 descriptors.c
 int_convertors.c
@@ -12,6 +13,8 @@ qtlib.c
 setup.cfg
 setup.py
 sip.h
+sip_array.c
+sip_array.h
 sipint.h
 siplib.c
 threads.c

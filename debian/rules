@@ -4,6 +4,3 @@ export PYBUILD_NAME=pyqt5.sip
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
-
-override_dh_strip:
-	dh_strip --dbgsym-migration='python3-pyqt5.sip-dbg (<< 12.9.0-3~)'

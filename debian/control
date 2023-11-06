@@ -6,10 +6,10 @@ Uploaders: Dmitry Shachnev <mitya57@debian.org>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all-dev,
-               python3-setuptools (>= 30.3)
+               python3-setuptools
 Rules-Requires-Root: no
-Standards-Version: 4.6.0
-Homepage: https://pypi.org/project/PyQt5-sip/
+Standards-Version: 4.6.2
+Homepage: https://www.riverbankcomputing.com/software/sip/
 Vcs-Git: https://salsa.debian.org/python-team/packages/pyqt5-sip.git
 Vcs-Browser: https://salsa.debian.org/python-team/packages/pyqt5-sip
 
