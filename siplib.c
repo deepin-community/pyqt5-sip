@@ -1,7 +1,7 @@
 /*
  * SIP library code.
  *
- * Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2023 Riverbank Computing Limited <info@riverbankcomputing.com>
  *
  * This file is part of SIP.
  *
@@ -17,6 +17,7 @@
  */
 
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <datetime.h>
 #include <frameobject.h>
@@ -29,7 +30,7 @@
 
 #include "sip.h"
 #include "sipint.h"
-#include "array.h"
+#include "sip_array.h"
 
 
 /* There doesn't seem to be a standard way of checking for C99 support. */
@@ -52,7 +53,7 @@ static int sipWrapperType_init(sipWrapperType *self, PyObject *args,
 static int sipWrapperType_setattro(PyObject *self, PyObject *name,
         PyObject *value);
 
-static PyTypeObject sipWrapperType_Type = {
+PyTypeObject sipWrapperType_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "sip.wrappertype",      /* tp_name */
     sizeof (sipWrapperType),    /* tp_basicsize */
@@ -380,6 +381,7 @@ static sipNewUserTypeFunc sip_api_set_new_user_type_handler(
 static void sip_api_set_type_user_data(sipWrapperType *wt, void *data);
 static void *sip_api_get_type_user_data(const sipWrapperType *wt);
 static PyObject *sip_api_py_type_dict(const PyTypeObject *py_type);
+static PyObject *sip_api_py_type_dict_ref(PyTypeObject *py_type);
 static const char *sip_api_py_type_name(const PyTypeObject *py_type);
 static int sip_api_get_method(PyObject *obj, sipMethodDef *method);
 static PyObject *sip_api_from_method(const sipMethodDef *method);
@@ -619,6 +621,10 @@ static const sipAPIDef sip_api = {
      */
     sip_api_is_py_method_12_8,
     sip_api_next_exception_handler,
+    /*
+     * The following are part of the public API.
+     */
+    sip_api_py_type_dict_ref,
 };
 
 
@@ -786,9 +792,6 @@ static PyTypeObject sipEnumType_Type = {
 };
 
 
-/*
- * Remove these in SIP v5.
- */
 sipQtAPI *sipQtSupport = NULL;
 sipTypeDef *sipQObjectType;
 
@@ -1043,18 +1046,6 @@ const sipAPIDef *sip_init_library(PyObject *mod_dict)
     PyObject *obj;
     PyMethodDef *md;
 
-    /*
-     * Remind ourselves to add support for capsule variables when we have
-     * another reason to move to the next major version number.
-     */
-#if SIP_API_MAJOR_NR > 12
-#error "Add support for capsule variables"
-#endif
-
-#if PY_VERSION_HEX < 0x03070000 && defined(WITH_THREAD)
-    PyEval_InitThreads();
-#endif
-
     /* Add the SIP version number. */
     obj = PyLong_FromLong(SIP_VERSION);
 
@@ -1135,6 +1126,9 @@ const sipAPIDef *sip_init_library(PyObject *mod_dict)
         return NULL;
 
     if (PyDict_SetItemString(mod_dict, "voidptr", (PyObject *)&sipVoidPtr_Type) < 0)
+        return NULL;
+
+    if (PyDict_SetItemString(mod_dict, "array", (PyObject *)&sipArray_Type) < 0)
         return NULL;
 
     /* These will always be needed. */
@@ -1794,7 +1788,7 @@ static int sip_api_export_module(sipExportedModuleDef *client,
     client->em_next = moduleList;
     moduleList = client;
 
-    /* Get any keyword handler.  Remove this in SIP v5. */
+    /* Get any keyword handler. */
     if (!got_kw_handler)
     {
         kw_handler = sip_api_import_symbol("pyqt_kw_handler");
@@ -2158,7 +2152,7 @@ void *sip_api_malloc(size_t nbytes)
 {
     void *mem;
 
-    if ((mem = PyMem_Malloc(nbytes)) == NULL)
+    if ((mem = PyMem_RawMalloc(nbytes)) == NULL)
         PyErr_NoMemory();
 
     return mem;
@@ -2170,7 +2164,7 @@ void *sip_api_malloc(size_t nbytes)
  */
 void sip_api_free(void *mem)
 {
-    PyMem_Free(mem);
+    PyMem_RawFree(mem);
 }
 
 
@@ -2491,8 +2485,6 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
 
         case 'E':
             {
-                /* Remove in v5.1. */
-
                 int ev = va_arg(va, int);
                 PyTypeObject *et = va_arg(va, PyTypeObject *);
 
@@ -2614,8 +2606,6 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
 
         case 'B':
             {
-                /* Remove in v5.1. */
-
                 void *p = va_arg(va,void *);
                 sipWrapperType *wt = va_arg(va, sipWrapperType *);
                 PyObject *xfer = va_arg(va, PyObject *);
@@ -2638,8 +2628,6 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
 
         case 'C':
             {
-                /* Remove in v5.1. */
-
                 void *p = va_arg(va,void *);
                 sipWrapperType *wt = va_arg(va, sipWrapperType *);
                 PyObject *xfer = va_arg(va, PyObject *);
@@ -2984,8 +2972,6 @@ static int parseResult(PyObject *method, PyObject *res,
 
             case 'E':
                 {
-                    /* Remove in v5.1. */
-
                     PyTypeObject *et = va_arg(va, PyTypeObject *);
                     int *p = va_arg(va, int *);
                     int v = sip_api_convert_to_enum(arg, ((sipEnumTypeObject *)et)->type);
@@ -3193,8 +3179,6 @@ static int parseResult(PyObject *method, PyObject *res,
 
             case 's':
                 {
-                    /* Remove in v5.1. */
-
                     const char **p = va_arg(va, const char **);
 
                     if (parseBytes_AsString(arg, p) < 0)
@@ -3265,8 +3249,6 @@ static int parseResult(PyObject *method, PyObject *res,
 
             case 'C':
                 {
-                    /* Remove in v5.1. */
-
                     if (*fmt == '\0')
                     {
                         invalid = TRUE;
@@ -3299,8 +3281,6 @@ static int parseResult(PyObject *method, PyObject *res,
 
             case 'D':
                 {
-                    /* Remove in v5.1. */
-
                     if (*fmt == '\0')
                     {
                         invalid = TRUE;
@@ -3920,6 +3900,11 @@ static int parsePass1(PyObject **parseErrp, sipSimpleWrapper **selfp,
 
     switch (*fmt++)
     {
+    case '#':
+            /* A ctor has an argument with the /Transfer/ annotation. */
+            *selfp = va_arg(va, PyObject *);
+            break;
+
     case 'B':
     case 'p':
         {
@@ -4403,7 +4388,10 @@ static int parsePass1(PyObject **parseErrp, sipSimpleWrapper **selfp,
 
         case 'r':
             {
-                /* Sequence of class or mapped type instances. */
+                /*
+                 * Sequence of mapped type instances.  For ABI v12.10 and
+                 * earlier this is also used for class instances.
+                 */
 
                 const sipTypeDef *td;
 
@@ -4412,6 +4400,30 @@ static int parsePass1(PyObject **parseErrp, sipSimpleWrapper **selfp,
                 va_arg(va, Py_ssize_t *);
 
                 if (arg != NULL && !canConvertFromSequence(arg, td))
+                {
+                    failure.reason = WrongType;
+                    failure.detail_obj = arg;
+                    Py_INCREF(arg);
+                }
+
+                break;
+            }
+
+        case '>':
+            {
+                /*
+                 * Sequence or sip.array of class instances.  This is only used
+                 * by ABI v12.11 and later.
+                 */
+
+                const sipTypeDef *td;
+
+                td = va_arg(va, const sipTypeDef *);
+                va_arg(va, void **);
+                va_arg(va, Py_ssize_t *);
+                va_arg(va, int *);
+
+                if (arg != NULL && !sip_array_can_convert(arg, td) && !canConvertFromSequence(arg, td))
                 {
                     failure.reason = WrongType;
                     failure.detail_obj = arg;
@@ -5389,6 +5401,10 @@ static int parsePass2(sipSimpleWrapper *self, int selfarg, PyObject *sipArgs,
     /* Handle the converions of "self" first. */
     switch (*fmt++)
     {
+    case '#':
+        va_arg(va, PyObject *);
+        break;
+
     case 'B':
         {
             /*
@@ -5569,7 +5585,7 @@ static int parsePass2(sipSimpleWrapper *self, int selfarg, PyObject *sipArgs,
 
         case 'r':
             {
-                /* Sequence of class or mapped type instances. */
+                /* Sequence of mapped type instances. */
 
                 const sipTypeDef *td;
                 void **array;
@@ -5581,6 +5597,44 @@ static int parsePass2(sipSimpleWrapper *self, int selfarg, PyObject *sipArgs,
 
                 if (arg != NULL && !convertFromSequence(arg, td, array, nr_elem))
                     return FALSE;
+
+                break;
+            }
+
+        case '>':
+            {
+                /* Sequence or sip.array of class instances. */
+
+                const sipTypeDef *td;
+                void **array;
+                Py_ssize_t *nr_elem;
+                int *is_temp;
+
+                td = va_arg(va, const sipTypeDef *);
+                array = va_arg(va, void **);
+                nr_elem = va_arg(va, Py_ssize_t *);
+                is_temp = va_arg(va, int *);
+
+                if (arg != NULL)
+                {
+                    if (sip_array_can_convert(arg, td))
+                    {
+                        sip_array_convert(arg, array, nr_elem);
+                        *is_temp = FALSE;
+                    }
+                    else if (convertFromSequence(arg, td, array, nr_elem))
+                    {
+                        /*
+                         * Note that this will leak if there is a subsequent
+                         * error.
+                         */
+                        *is_temp = TRUE;
+                    }
+                    else
+                    {
+                        return FALSE;
+                    }
+                }
 
                 break;
             }
@@ -5812,6 +5866,12 @@ static int canConvertFromSequence(PyObject *seq, const sipTypeDef *td)
     if (size < 0)
         return FALSE;
 
+    /*
+     * Check the type of each element.  Note that this is inconsistent with how
+     * similiar situations are handled elsewhere.  We should instead just check
+     * we have an iterator and assume (until the second pass) that the type is
+     * correct.
+     */
     for (i = 0; i < size; ++i)
     {
         int ok;
@@ -7291,8 +7351,6 @@ static const sipTypeDef *sip_api_type_scope(const sipTypeDef *td)
  */
 static int sip_api_can_convert_to_enum(PyObject *obj, const sipTypeDef *td)
 {
-    /* Remove in v5.1. */
-
     assert(sipTypeIsEnum(td));
 
     /* If the object is an enum then it must be the right enum. */
@@ -7868,8 +7926,6 @@ static void sip_api_transfer_back(PyObject *self)
  */
 static void sip_api_transfer_break(PyObject *self)
 {
-    /* Remove in v5.1. */
-
     if (self != NULL && PyObject_TypeCheck(self, (PyTypeObject *)&sipWrapper_Type))
     {
         sipSimpleWrapper *sw = (sipSimpleWrapper *)self;
@@ -9229,8 +9285,6 @@ static const sipTypeDef *sip_api_find_type(const char *type)
  */
 static const sipMappedType *sip_api_find_mapped_type(const char *type)
 {
-    /* Remove in v5.1. */
-
     const sipTypeDef *td = sip_api_find_type(type);
 
     if (td != NULL && sipTypeIsMapped(td))
@@ -9245,8 +9299,6 @@ static const sipMappedType *sip_api_find_mapped_type(const char *type)
  */
 static sipWrapperType *sip_api_find_class(const char *type)
 {
-    /* Remove in v5.1. */
-
     const sipTypeDef *td = sip_api_find_type(type);
 
     if (td != NULL && sipTypeIsClass(td))
@@ -9262,8 +9314,6 @@ static sipWrapperType *sip_api_find_class(const char *type)
  */
 static PyTypeObject *sip_api_find_named_enum(const char *type)
 {
-    /* Remove in v5.1. */
-
     const sipTypeDef *td = sip_api_find_type(type);
 
     if (td != NULL && sipTypeIsEnum(td))
@@ -9433,8 +9483,6 @@ static int compareStringMapEntry(const void *key,const void *el)
 static sipWrapperType *sip_api_map_string_to_class(const char *typeString,
         const sipStringTypeClassMap *map, int maplen)
 {
-    /* Remove in v5.1. */
-
     sipStringTypeClassMap *me;
 
     me = (sipStringTypeClassMap *)bsearch((const void *)typeString,
@@ -9471,8 +9519,6 @@ static int compareIntMapEntry(const void *keyp,const void *el)
 static sipWrapperType *sip_api_map_int_to_class(int typeInt,
         const sipIntTypeClassMap *map, int maplen)
 {
-    /* Remove in v5.1. */
-
     sipIntTypeClassMap *me;
 
     me = (sipIntTypeClassMap *)bsearch((const void *)&typeInt,
@@ -10140,7 +10186,7 @@ static int sipSimpleWrapper_init(sipSimpleWrapper *self, PyObject *args,
         }
     }
 
-    /* Call the handler if we have one.  Remove this in SIP v5. */
+    /* Call the handler if we have one. */
     if (kw_handler != NULL && unused != NULL && isQObject((PyObject *)self))
     {
         int rc = kw_handler((PyObject *)self, sipNew, unused);
@@ -12166,7 +12212,12 @@ static PyObject *sipEnumType_alloc(PyTypeObject *self, Py_ssize_t nitems)
     sipEnumTypeObject *py_type;
     sipPySlotDef *psd;
 
-    assert(currentType != NULL);
+    if (currentType == NULL)
+    {
+        PyErr_SetString(PyExc_TypeError, "enums cannot be sub-classed");
+        return NULL;
+    }
+
     assert(sipTypeIsEnum(currentType));
 
     /* Call the standard super-metatype alloc. */
@@ -12547,11 +12598,34 @@ static void *sip_api_get_type_user_data(const sipWrapperType *wt)
 
 
 /*
- * Get the dict of a Python type (on behalf of the limited API).
+ * Get a borrowed reference to the dict of a Python type (on behalf of the
+ * limited API).  This is deprecated in ABI v12.13 and must not be used with
+ * Python v3.12 and later.
  */
 static PyObject *sip_api_py_type_dict(const PyTypeObject *py_type)
 {
+    PyErr_WarnEx(PyExc_DeprecationWarning,
+            "sipPyTypeDict() is deprecated, the extension module should use "
+            "sipPyTypeDictRef() instead",
+            1);
+
     return py_type->tp_dict;
+}
+
+
+/*
+ * Get a new reference to the dict of a Python type (on behalf of the limited
+ * API).
+ */
+static PyObject *sip_api_py_type_dict_ref(PyTypeObject *py_type)
+{
+#if PY_VERSION_HEX >= 0x030c0000
+    return PyType_GetDict(py_type);
+#else
+    PyObject *ref = py_type->tp_dict;
+    Py_XINCREF(ref);
+    return ref;
+#endif
 }
 
 
@@ -12738,7 +12812,9 @@ static int sip_api_is_user_type(const sipWrapperType *wt)
 
 
 /*
- * Return a frame from the execution stack.
+ * Return a frame from the execution stack.  Note that we use 'struct _frame'
+ * rather than PyFrameObject because the latter wasn't exposed to the limited
+ * API until Python v3.9.
  */
 static struct _frame *sip_api_get_frame(int depth)
 {
@@ -12750,7 +12826,14 @@ static struct _frame *sip_api_get_frame(int depth)
 
     while (frame != NULL && depth > 0)
     {
+#if PY_VERSION_HEX < 0x03090000
         frame = frame->f_back;
+#else
+        frame = PyFrame_GetBack(frame);
+
+        /* Historically we return a borrowed reference. */
+        Py_XDECREF(frame);
+#endif
         --depth;
     }
 
@@ -13248,16 +13331,12 @@ int sip_api_convert_from_slice_object(PyObject *slice, Py_ssize_t length,
         Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step,
         Py_ssize_t *slicelength)
 {
-#if PY_VERSION_HEX >= 0x03070000
     if (PySlice_Unpack(slice, start, stop, step) < 0)
         return -1;
 
     *slicelength = PySlice_AdjustIndices(length, start, stop, *step);
 
     return 0;
-#else
-    return PySlice_GetIndicesEx(slice, length, start, stop, step, slicelength);
-#endif
 }
 
 

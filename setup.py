@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # This copy of SIP is licensed for use under the terms of the SIP License
@@ -38,8 +38,8 @@ module = Extension('PyQt5.sip', module_src)
 # Do the setup.
 setup(
         name='PyQt5_sip',
-        version='12.9.0',
+        version='12.13.0',
         license='SIP',
-        python_requires='>=3.5',
+        python_requires='>=3.7',
         ext_modules=[module]
      )

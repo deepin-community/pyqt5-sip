@@ -1,7 +1,7 @@
 /*
  * The SIP module interface.
  *
- * Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2023 Riverbank Computing Limited <info@riverbankcomputing.com>
  *
  * This file is part of SIP.
  *
@@ -24,8 +24,8 @@
 #include <Python.h>
 
 /* Sanity check on the Python version. */
-#if PY_VERSION_HEX < 0x03050000
-#error "This version of SIP requires Python v3.5 or later"
+#if PY_VERSION_HEX < 0x03070000
+#error "This version of PyQt5.sip requires Python v3.7 or later"
 #endif
 
 
@@ -43,24 +43,43 @@ extern "C" {
 #endif
 
 
-/* The patch version of this implementation of the ABI. */
+/* The version of the ABI. */
+#define SIP_ABI_MAJOR_VERSION       12
+#define SIP_ABI_MINOR_VERSION       13
 #define SIP_MODULE_PATCH_VERSION    0
 
 
 /*
- * The changes to this version of the ABI.
+ * The change history of the ABI.
  *
- * Preserve any current exception in the wrapper tp_dealloc functions.
+ * v12.13
+ *  - Added support for Python v3.12.
+ *  - Added sipPyTypeDictRef().
+ *  - Deprecated sipPyTypeDict().
+ *
+ * v12.12
+ *  - Added the '#' conversion character to the argument parsers.
+ *
+ * v12.11
+ *  - Published the 'array' type.
+ *  - Added the ctd_sizeof, ctd_array_delete members to sipClassTypeDef.
+ *  - Added the '>' conversion character to the argument parsers.
+ *
+ * v12.10
+ *  - Python v3.7 or later is required.
+ *  - Added support for Python v3.11.
+ *
+ * v12.9
+ *  - Added sipNextExceptionHandler().
+ *
+ * v12.8
+ *  - Added a new thread-safe implementation of sipIsPyMethod().
  */
 
 
-/* The ABI version implemented. */
-#define SIP_ABI_MAJOR_VERSION       12
-#define SIP_ABI_MINOR_VERSION       9
-
 /* The version of the code generator. */
-#define SIP_VERSION                 0x60100
-#define SIP_VERSION_STR             "6.1.0.dev2104271705"
+#define SIP_VERSION                 0x6070c
+#define SIP_VERSION_STR             "6.7.12"
 
 /* These are all dependent on the user-specified name of the sip module. */
 #define _SIP_MODULE_FQ_NAME         "PyQt5.sip"
@@ -119,16 +138,11 @@ typedef unsigned int uint;
 #endif
 
 
-/* Remove in v5.1. */
 #define SIP_SSIZE_T             Py_ssize_t
 #define SIP_SSIZE_T_FORMAT      "%zd"
 #define SIP_USE_PYCAPSULE
 #define SIP_MODULE_RETURN(v)    return (v)
 
-/*
- * Remove in v5.1.  These are undocumented and can be removed when PyQt5 drops
- * support for Python v2.
- */
 #define SIPLong_Check       PyLong_Check
 #define SIPLong_FromLong    PyLong_FromLong
 #define SIPLong_AsLong      PyLong_AsLong
@@ -259,6 +273,7 @@ typedef int (*sipVirtHandlerFunc)(sip_gilstate_t, sipVirtErrorHandlerFunc,
         sipSimpleWrapper *, PyObject *, ...);
 typedef void (*sipAssignFunc)(void *, Py_ssize_t, void *);
 typedef void *(*sipArrayFunc)(Py_ssize_t);
+typedef void (*sipArrayDeleteFunc)(void *);
 typedef void *(*sipCopyFunc)(const void *, Py_ssize_t);
 typedef void (*sipReleaseFunc)(void *, int);
 typedef PyObject *(*sipPickleFunc)(void *);
@@ -364,7 +379,6 @@ struct _sipWrapper {
 
 
 /*
- * Removed in v5.1.
  * The meta-type of an enum type.  (This is exposed only to support the
  * deprecated sipConvertFromNamedEnum() macro.)
  */
@@ -887,6 +901,12 @@ typedef struct _sipClassTypeDef {
 
     /* The mixin initialisation function. */
     initproc ctd_init_mixin;
+
+    /* The optional array delete function. */
+    sipArrayDeleteFunc ctd_array_delete;
+
+    /* The sizeof the class. */
+    size_t ctd_sizeof;
 } sipClassTypeDef;
 
 
@@ -951,7 +971,6 @@ typedef struct _sipExternalTypeDef {
 
 
 /*
- * Remove in v5.1.
  * The information describing a mapped class.  This (and anything that uses it)
  * is deprecated.
  */
@@ -1323,7 +1342,6 @@ typedef struct _sipTypeInstanceDef {
 
 
 /*
- * Remove in v5.1.
  * Define a mapping between a wrapped type identified by a string and the
  * corresponding Python type.
  */
@@ -1337,7 +1355,6 @@ typedef struct _sipStringTypeClassMap {
 
 
 /*
- * Remove in v5.1.
  * Define a mapping between a wrapped type identified by an integer and the
  * corresponding Python type.
  */
@@ -1656,6 +1673,11 @@ typedef struct _sipAPIDef {
     PyObject *(*api_is_py_method_12_8)(sip_gilstate_t *gil, char *pymc,
             sipSimpleWrapper **sipSelfp, const char *cname, const char *mname);
     sipExceptionHandler (*api_next_exception_handler)(void **statep);
+
+    /*
+     * The following are part of the public API.
+     */
+    PyObject *(*api_py_type_dict_ref)(PyTypeObject *);
 } sipAPIDef;
 
 const sipAPIDef *sip_init_library(PyObject *mod_dict);
@@ -1776,9 +1798,8 @@ typedef struct _sipQtAPI {
 #define sipTypeName(td)     sipNameFromPool((td)->td_module, (td)->td_cname)
 #define sipTypePluginData(td)   ((td)->td_plugin_data)
 
-
 /*
- * Remove in v5.1.
+ * These are deprecated.
  */
 #define sipClassName(w)     PyString_FromString(Py_TYPE(w)->tp_name)
 #define sipIsExactWrappedType(wt)   (sipTypeAsPyTypeObject((wt)->wt_td) == (PyTypeObject *)(wt))
