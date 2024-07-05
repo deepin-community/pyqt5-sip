@@ -1,0 +1,39 @@
+From: Phil Thompson <phil@riverbankcomputing.com>
+Date: Fri, 24 May 2024 14:08:26 +0100
+Subject: Fix build with GCC 14
+
+Origin: upstream, commits:
+ - https://github.com/Python-SIP/sip/commit/5a3ef73785cda3d9
+ - https://github.com/Python-SIP/sip/commit/51f3e60007f54fb5
+---
+ sip_array.c | 3 ++-
+ siplib.c    | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/sip_array.c b/sip_array.c
+index 6ba676a..64b195b 100644
+--- a/sip_array.c
++++ b/sip_array.c
+@@ -319,7 +319,8 @@ static int sipArray_getbuffer(PyObject *self, Py_buffer *view, int flags)
+ 
+     view->format = NULL;
+     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
+-        view->format = format;
++        /* Note that the need for a cast is probably a Python bug. */
++        view->format = (char *)format;
+ 
+     view->ndim = 1;
+ 
+diff --git a/siplib.c b/siplib.c
+index 8b0a6d5..f0a17b7 100644
+--- a/siplib.c
++++ b/siplib.c
+@@ -3902,7 +3902,7 @@ static int parsePass1(PyObject **parseErrp, sipSimpleWrapper **selfp,
+     {
+     case '#':
+             /* A ctor has an argument with the /Transfer/ annotation. */
+-            *selfp = va_arg(va, PyObject *);
++            *selfp = (sipSimpleWrapper *)va_arg(va, PyObject *);
+             break;
+ 
+     case 'B':
