@@ -1,3 +1,10 @@
+pyqt5-sip (12.13.0-2) unstable; urgency=medium
+
+  * Backport upstream patch to fix build with GCC 14 (closes: #1075408).
+  * Bump Standards-Version to 4.7.0, no changes needed.
+
+ -- Dmitry Shachnev <mitya57@debian.org>  Thu, 04 Jul 2024 15:28:25 +0300
+
 pyqt5-sip (12.13.0-1) unstable; urgency=medium
 
   * New upstream release.

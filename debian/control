@@ -8,7 +8,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-all-dev,
                python3-setuptools
 Rules-Requires-Root: no
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Homepage: https://www.riverbankcomputing.com/software/sip/
 Vcs-Git: https://salsa.debian.org/python-team/packages/pyqt5-sip.git
 Vcs-Browser: https://salsa.debian.org/python-team/packages/pyqt5-sip
